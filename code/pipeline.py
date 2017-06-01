@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 import cv2
+from sqlalchemy.sql.expression import except_
 
 
 def grayscale(img):
@@ -19,6 +20,7 @@ def grayscale(img):
 def to_HSV(img):
     """Transform image from RGB format to HSV
     to better filter for lanes"""
+    a = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     return cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
 def HSV_flt(img, yellow_min,yellow_max, white_min, white_max):
@@ -57,7 +59,7 @@ def region_of_interest(img, vertices):
     #returning the image only where mask pixels are nonzero
     return cv2.bitwise_and(img, mask)
 
-def draw_lines(img, lines, color=[255, 0, 0], thickness=20):
+def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
     """
     The function average the line parameters and extrapolate two lines: 
     one on the left, and the other on the right.
@@ -68,9 +70,11 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=20):
     the lines and extrapolate to the top and bottom of the lane.
 
     """
+
     y_min = int(img.shape[0]*3/5)
     r_b, r_m, l_b, l_m = 0, 0, 0, 0
     rbc, rmc, lbc, lmc = 0, 0, 0, 0
+ 
     for line in lines:
         for x1,y1,x2,y2 in line:
             m = (y2 - y1)/(x2 - x1)
@@ -84,19 +88,22 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=20):
                 b = y1 - m * x1
                 # When slope ((y2-y1)/(x2-x1)) is negative the line is on the left
                 if m < 0: #left
-                    if (y_min - b)/m >= 0:
+                    if (img.shape[0] - b)/m >= 0:
+                        #print(x1,y1,x2,y2)
                         l_b += b
                         lbc += 1
                         l_m += m
                         lmc += 1
-                # When slope ((y2-y1)/(x2-x1)) is positive the line is on the left        
+                        #cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+                # When slope ((y2-y1)/(x2-x1)) is positive the line is on the right       
                 else: 
-                    if (y_min - b)/m <= img.shape[1]:
+                    if (img.shape[0] - b)/m <= img.shape[1]:
                         r_b += b
                         rbc += 1
                         r_m += m
                         rmc += 1
-    # average the coefficient        
+                        #cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+    # average the coefficient  
     left_m = l_m / lmc 
     left_b = l_b / lbc
     right_m = r_m / rmc 
@@ -117,7 +124,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
     line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    draw_lines(line_img, lines)
+    draw_lines(line_img,lines)
     return line_img
 
 def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
@@ -135,24 +142,25 @@ def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
 
 
 #read the image
-image = mpimg.imread('solidYellowLeft.jpg')
+image = mpimg.imread('frame113.jpg')
 imshape = image.shape
 print('This image is:', type(image), 'with dimensions:', image.shape)
 #define HSV filter range
-yellow_min = np.array([15, 0, 0], np.uint8)
+yellow_min = np.array([20, 0, 100], np.uint8)
 yellow_max = np.array([50, 255, 255], np.uint8)
-white_min = np.array([0, 0, 150], np.uint8)
-white_max = np.array([255, 80, 255], np.uint8)
+white_min = np.array([0, 0, 180], np.uint8)
+white_max = np.array([255, 50, 255], np.uint8)
 color_flt = HSV_flt(image,yellow_min,yellow_max, white_min, white_max)
-#plt.imshow(color_flt)
-#plt.show()
+#plt.figure(2)
+plt.imshow(color_flt)
+plt.show()
 #tranform image to grayscale
 gray = grayscale(color_flt)
 #plt.imshow(gray, cmap = 'gray')
 #plt.show()
 #filter image and only keep area of interet
 low_threshold, high_threshold = 50, 150
-kernel_size = 3
+kernel_size = 5
 vertices =np.array([[(0,imshape[0]),(imshape[1]*5/11, imshape[0]*3/5), 
                      (imshape[1]*6/11, imshape[0]*3/5), (imshape[1],imshape[0])]], 
                    dtype=np.int32)
@@ -163,17 +171,25 @@ filtered = gaussian_blur(gray, kernel_size)
 edge = canny(filtered, low_threshold, high_threshold)
 
 masked_edges = cv2.bitwise_and(edge, mask)
-#plt.imshow(masked_edges)
-#plt.show()
+#plt.figure(1)
+plt.imshow(masked_edges)
+plt.show()
+
 #find lines 
 rho = 1 # distance resolution in pixels of the Hough grid
 theta = np.pi/180*1 # angular resolution in radians of the Hough grid
-threshold = 20    # minimum number of votes (intersections in Hough grid cell)
+threshold = 100    # minimum number of votes (intersections in Hough grid cell)
 min_line_length = 10 #minimum number of pixels making up a line
-max_line_gap =  50  # maximum gap in pixels between connectable line segments
+max_line_gap =  5  # maximum gap in pixels between connectable line segments
 
-line_im = hough_lines(masked_edges, rho, theta, threshold, min_line_length, max_line_gap)
+while True:
+    try:
+        line_im = hough_lines(masked_edges, rho, theta, threshold, min_line_length, max_line_gap)
+        break
+    except:
+        threshold -= 10
 final_im = weighted_img(line_im, image)
 #process image
+plt.figure(3)
 plt.imshow(final_im)
 plt.show()
