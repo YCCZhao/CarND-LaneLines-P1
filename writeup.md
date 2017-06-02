@@ -22,7 +22,7 @@ white_max = np.array([255, 50, 255], np.uint8)
 ```
 
 **2. Modified `draw_lines()` to draw a single line on the left and right lanes.**
-* In order to do so, first I filtered lines that are less than 15 degree from the X-axis. 
+* In order to do so, first I filtered lines that were less than 15 degree from the X-axis. 
 
 * Then I categorized lines into left lines or right lines based on their slope: negative slope = left lines, 
   and positive one = right lines. 
@@ -42,7 +42,7 @@ threshold = 100    # minimum number of votes (intersections in Hough grid cell)
 min_line_length = 10 #minimum number of pixels making up a line
 max_line_gap =  5  # maximum gap in pixels between connectable line segments
 ```
-* Large threshold filtered edges that weren't belong the lanes. However when some lanes weren not clearly visible
+* Large threshold filtered edges that weren't belong the lanes. However when some lanes were not clearly visible
   or missing, `hough_lines()` returned zero lines and the pipeline threw an error. To solove this issue, I added
   steps to decrease threshold automatically until lines were returned.
 
@@ -56,25 +56,30 @@ max_line_gap =  5  # maximum gap in pixels between connectable line segments
  
 ## Shortcomings with my current pipeline:
 
-One potential shortcoming could be that incorrect lines would be returned if there no lines between lanes.
+One potential shortcoming could be that incorrect lines would be returned if there was no line between lanes.
 For older cities like Philadelphia, some lines on freeways were totally worn out. The pipeline would continue
-decrease the threshold until it picks up some random irrelevent lines. 
+decreasing the threshold until it picked up some random irrelevent lines. 
 
-Another shortcoming could be the computation time. Unlike processing a video saved locally, the pipeline would process live
-video. A moving car would need the imformation very fast so it can make its decision right away. The while loop i added to find thresholds could slow the process down.
+Another shortcoming could be the computation time. Unlike processing a video saved locally, the pipeline would need to process live
+video. A moving car would need the imformation in a very short time so it can make its decision right away. The while loop I added to
+find thresholds could slow the process down.
 
-One other shortcoming could be when lines are out of interets region. A car would make a sudden turn to avoid hazard 
-condition. That could cause lanes out of interest region, and the pipeline would have troubles detect the lanes. The
+One other shortcoming could be when lines are out of interets region. A car would make a sudden turn in some cases of emergency. That 
+could cause lanes out of interest region, and the pipeline would have troubles to detect the lanes. The
 pipeline wouldn't work when the car is changing lanes either.
 
 
 ## Possible improvements to my pipeline:
 
-A possible improvement would be to include line changing trends while extrapolating left and right lanes. For example combine gradient of line paramters and output of `hough_lines()` to find the left and right lanes.
+A possible improvement would be to include line changing trends while extrapolating left and right lanes. For example combine gradient 
+of the line paramters and output of `hough_lines()` to find the left and right lanes. The line history could provide important 
+information when lines were hard to detect.
 
-Another potential improvement could be to change Hough line Transform parameters based on number of edges identified, insteady of starting at a fixed value and change incrementally. 
+Another potential improvement could be to change Hough line Transform parameters based on number of edges identified, instead of
+starting at a fixed value and change incrementally. 
 
-Also if I had more time, I would look into how I could use other methods to better process images before edge detection. Making the lane lines pop out more and filter noise such as tire marks would increase the accuracy.  
+Also if I had more time, I would look into how I could use other methods to better process images before edge detection. Making the lane
+lines pop out more and filter noise such as tire marks would increase the accuracy.  
 
 
 
