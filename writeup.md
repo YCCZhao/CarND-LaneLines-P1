@@ -1,5 +1,7 @@
 # **Reflection**
 
+
+
 ## My pipeline description:
 
 My pipeline consisted of 5 steps: 
@@ -9,6 +11,8 @@ My pipeline consisted of 5 steps:
 * Applied Canny Edage Detection to find all edges; 
 * Only kept the edges in the area where the lanes are located at the images; 
 * Perfomred Hough Line Tranform to map the left lanes and the right lanes.
+
+
 
 ### Summary of Modification In My Pipeline 
 
@@ -21,6 +25,8 @@ white_min = np.array([0, 0, 180], np.uint8)
 white_max = np.array([255, 50, 255], np.uint8)
 ```
 
+
+
 **2. Modified `draw_lines()` to draw a single line on the left and right lanes.**
 * In order to do so, first I filtered lines that were less than 15 degree from the X-axis. 
 
@@ -32,6 +38,8 @@ white_max = np.array([255, 50, 255], np.uint8)
   
 * Finally I averaged for all the right lines and all the left lines. With averaged paramters for both lines, 
   a left line and a right line were mapped from the bottom of the image up to the end of the area of interest. 
+
+
 
 **3. Tuned Hough Line Transform paramters and automated parameter update when `hough_lines()` return zero lines**
 * The followings are the paramters I started to use for Hour Line Transform
@@ -54,6 +62,8 @@ max_line_gap =  5  # maximum gap in pixels between connectable line segments
     threshold -= 10 
 ```
  
+ 
+ 
 ## Shortcomings with my current pipeline:
 
 One potential shortcoming could be that incorrect lines would be returned if there was no line between lanes.
@@ -67,6 +77,7 @@ find thresholds could slow the process down.
 One other shortcoming could be when lines are out of interets region. A car would make a sudden turn in some cases of emergency. That 
 could cause lanes out of interest region, and the pipeline would have troubles to detect the lanes. The
 pipeline wouldn't work when the car is changing lanes either.
+
 
 
 ## Possible improvements to my pipeline:
